@@ -3,13 +3,17 @@ import 'package:flutter/src/widgets/framework.dart';
 
 import 'package:flutter/material.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
+import 'package:omar_ahmed_maps/constants/strings.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
   late String phoneNumber;
+  final GlobalKey<FormState> _phoneFormKey = GlobalKey();
+
   Widget _buildIntroTexts() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("What's your name?",
             style: TextStyle(
@@ -88,12 +92,12 @@ class LoginScreen extends StatelessWidget {
     return flag;
   }
 
-  Widget _buildNextButton() {
+  Widget _buildNextButton(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
       child: ElevatedButton(
         onPressed: () {
-          // هنعمل ده في المرة الجاية
+          Navigator.pushNamed(context, otpScreen);
         },
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(110, 50),
@@ -115,7 +119,7 @@ class LoginScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
           child: Form(
-            key: UniqueKey(),
+            key: _phoneFormKey,
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 88),
               child: Column(
@@ -125,7 +129,7 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 110),
                   _buildPhoneFormField(),
                   const SizedBox(height: 30),
-                  _buildNextButton(),
+                  _buildNextButton(context),
                 ],
               ),
             ),
