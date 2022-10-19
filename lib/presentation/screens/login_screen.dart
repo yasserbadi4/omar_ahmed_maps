@@ -1,12 +1,12 @@
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omar_ahmed_maps/business_logic/phone_auth/phone_auth_cubit.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
 import 'package:omar_ahmed_maps/constants/strings.dart';
 
+// ignore: must_be_immutable
 class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+  LoginScreen({Key? key}) : super(key: key);
 
   late String phoneNumber;
   final GlobalKey<FormState> _phoneFormKey = GlobalKey();
@@ -15,7 +15,7 @@ class LoginScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("What's your name?",
+        const Text("What's your phone number?",
             style: TextStyle(
                 fontSize: 24,
                 color: Colors.black,
@@ -42,7 +42,7 @@ class LoginScreen extends StatelessWidget {
               border: Border.all(color: MyColors.lightgrey),
               borderRadius: const BorderRadius.all(Radius.circular(6)),
             ),
-            child: Text(generateCountryFlag() + '  +20',
+            child: Text('${generateCountryFlag()}  +20',
                 style: const TextStyle(fontSize: 16, letterSpacing: 2.0)),
           ),
         ),
@@ -71,7 +71,7 @@ class LoginScreen extends StatelessWidget {
                 if (value!.isEmpty) {
                   return 'Please enter your phone number';
                 } else if (value.length < 11) {
-                  return 'Please enter a valid phone number';
+                  return 'Too short for a phone number';
                 }
                 return null;
               },
@@ -86,10 +86,21 @@ class LoginScreen extends StatelessWidget {
   }
 
   String generateCountryFlag() {
-    String countryCode = 'EG';
+    String countryCode = 'eg';
     String flag = countryCode.toUpperCase().replaceAllMapped(RegExp(r'[A-Z]'),
         (match) => String.fromCharCode(match[0]!.codeUnitAt(0) + 127397));
     return flag;
+  }
+
+  Future<void> _register(BuildContext context) async {
+    if (!_phoneFormKey.currentState!.validate()) {
+      Navigator.pop(context);
+      return;
+    } else {
+      Navigator.pop(context);
+      _phoneFormKey.currentState!.save();
+      BlocProvider.of<AuthCubit>(context).submitPhoneNumber(phoneNumber);
+    }
   }
 
   Widget _buildNextButton(BuildContext context) {
@@ -97,7 +108,8 @@ class LoginScreen extends StatelessWidget {
       alignment: Alignment.centerRight,
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushNamed(context, otpScreen);
+          showProgressIndicator(context);
+          _register(context);
         },
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(110, 50),
@@ -109,6 +121,55 @@ class LoginScreen extends StatelessWidget {
         child: const Text("Next",
             style: TextStyle(fontSize: 16, color: Colors.white)),
       ),
+    );
+  }
+
+  void showProgressIndicator(BuildContext context) {
+    AlertDialog alertDialog = const AlertDialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      content: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+        ),
+      ),
+    );
+
+    showDialog(
+        barrierColor: Colors.white.withOpacity(0),
+        barrierDismissible: false,
+        context: context,
+        builder: ((context) {
+          return alertDialog;
+        }));
+  }
+
+  Widget _buildPhoneNumberSubmittedBloc() {
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) {
+        return previous != current;
+      },
+      listener: (context, state) {
+        if (state is AuthLoading) {
+          showProgressIndicator(context);
+        }
+        if (state is PhoneNumberSubmitted) {
+          Navigator.pop(context);
+          Navigator.of(context).pushNamed(otpScreen, arguments: phoneNumber);
+        }
+        if (state is AuthError) {
+          Navigator.pop(context);
+          String errMsg = (state).errMsg;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errMsg),
+              backgroundColor: Colors.black,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      child: Container(),
     );
   }
 
@@ -130,6 +191,7 @@ class LoginScreen extends StatelessWidget {
                   _buildPhoneFormField(),
                   const SizedBox(height: 30),
                   _buildNextButton(context),
+                  _buildPhoneNumberSubmittedBloc(),
                 ],
               ),
             ),

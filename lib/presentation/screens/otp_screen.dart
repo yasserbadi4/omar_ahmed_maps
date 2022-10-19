@@ -1,14 +1,17 @@
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omar_ahmed_maps/business_logic/phone_auth/phone_auth_cubit.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
+import 'package:omar_ahmed_maps/constants/strings.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
+// ignore: must_be_immutable
 class OtpScreen extends StatelessWidget {
-  OtpScreen({super.key});
+  // ignore: prefer_typing_uninitialized_variables
+  final phoneNumber;
 
-  final phoneNumber = '';
+  OtpScreen({Key? key, required this.phoneNumber}) : super(key: key);
+  late String otpCode;
 //  String otpCode;
   Widget _buildIntroTexts() {
     return Column(
@@ -39,6 +42,25 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
+  void showProgressIndicator(BuildContext context) {
+    AlertDialog alertDialog = const AlertDialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      content: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+        ),
+      ),
+    );
+    showDialog(
+        barrierColor: Colors.white.withOpacity(0),
+        barrierDismissible: false,
+        context: context,
+        builder: ((context) {
+          return alertDialog;
+        }));
+  }
+
   /// .......................................
 
   Widget _buildPinCodeFields(BuildContext context) {
@@ -67,8 +89,8 @@ class OtpScreen extends StatelessWidget {
         animationDuration: Duration(milliseconds: 300),
         backgroundColor: Colors.white,
         enableActiveFill: true,
-        onCompleted: (code) {
-          //  otpCode = code;
+        onCompleted: (submittedCode) {
+          otpCode = submittedCode;
           print("Completed");
         },
         onChanged: (value) {
@@ -78,14 +100,21 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
+//............................
+
+  void _login(BuildContext context) {
+    BlocProvider.of<AuthCubit>(context).submitOTP(otpCode);
+  }
+
   /// .......................................
 
-  Widget _buildVerifyButton() {
+  Widget _buildVerifyButton(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
       child: ElevatedButton(
         onPressed: () {
-          // هنعمل ده في المرة الجاية
+          showProgressIndicator(context);
+          _login(context);
         },
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(110, 50),
@@ -100,25 +129,57 @@ class OtpScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildPhoneVerificationBloc() {
+    return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) {
+        return previous != current;
+      },
+      listener: (context, state) {
+        if (state is AuthLoading) {
+          showProgressIndicator(context);
+        }
+        if (state is PhoneOTPVerified) {
+          Navigator.pop(context);
+          Navigator.of(context).pushReplacementNamed(mapScreen);
+        }
+        if (state is AuthError) {
+          Navigator.pop(context);
+          String errMsg = (state).errMsg;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errMsg),
+              backgroundColor: Colors.black,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+      child: Container(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 88),
-          child: Column(
-            children: [
-              _buildIntroTexts(),
-              const SizedBox(
-                height: 88,
-              ),
-              _buildPinCodeFields(context),
-              const SizedBox(
-                height: 60,
-              ),
-              _buildVerifyButton(),
-            ],
+        body: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 88),
+            child: Column(
+              children: [
+                _buildIntroTexts(),
+                const SizedBox(
+                  height: 88,
+                ),
+                _buildPinCodeFields(context),
+                const SizedBox(
+                  height: 60,
+                ),
+                _buildVerifyButton(context),
+                _buildPhoneVerificationBloc(),
+              ],
+            ),
           ),
         ),
       ),
