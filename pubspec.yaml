@@ -27,6 +27,8 @@ dependencies:
   firebase_core: ^1.24.0
   firebase_auth: ^3.11.2
   pin_code_fields: ^7.4.0
+  google_maps_flutter: ^2.2.1
+  geolocator: ^9.0.2
 
 dev_dependencies:
   flutter_test:
