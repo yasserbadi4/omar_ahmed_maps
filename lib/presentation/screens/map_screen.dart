@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:material_floating_search_bar/material_floating_search_bar.dart';
 import 'package:omar_ahmed_maps/business_logic/phone_auth/phone_auth_cubit.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
 import 'package:omar_ahmed_maps/constants/strings.dart';
 import 'package:omar_ahmed_maps/helpers/location_helper.dart';
+import 'package:omar_ahmed_maps/presentation/widgets/my_drawer.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -18,6 +20,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   AuthCubit authCubit = AuthCubit();
+  FloatingSearchBarController controller = FloatingSearchBarController();
 
   static Position? position;
   Completer<GoogleMapController> _mapController = Completer();
@@ -60,11 +63,63 @@ class _MapScreenState extends State<MapScreen> {
     getMyCurrentLocationNew();
   }
 
+  Widget buildFloatingSearchBar() {
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    return FloatingSearchBar(
+      controller: controller,
+      elevation: 6,
+      hintStyle: TextStyle(fontSize: 18),
+      queryStyle: TextStyle(fontSize: 18),
+      hint: "Find a Place ..",
+      border: BorderSide(style: BorderStyle.none),
+      margins: EdgeInsets.fromLTRB(20, 70, 20, 0),
+      padding: EdgeInsets.fromLTRB(2, 0, 2, 0),
+      height: 52,
+      iconColor: MyColors.blue,
+      scrollPadding: const EdgeInsets.only(top: 16, bottom: 56),
+      transitionDuration: const Duration(milliseconds: 600),
+      transitionCurve: Curves.easeInOut,
+      physics: const BouncingScrollPhysics(),
+      axisAlignment: isPortrait ? 0.0 : -1.0,
+      openAxisAlignment: 0.0,
+      width: isPortrait ? 600 : 500,
+      debounceDelay: const Duration(milliseconds: 500),
+      onQueryChanged: (query) {},
+      onFocusChanged: (_) {},
+      transition: CircularFloatingSearchBarTransition(),
+      actions: [
+        FloatingSearchBarAction(
+          showIfOpened: false,
+          child: CircularButton(
+            icon: Icon(
+              Icons.place,
+              color: Colors.black.withOpacity(0.6),
+            ),
+            onPressed: () {},
+          ),
+        ),
+      ],
+      builder: (context, transition) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // ignore: avoid_unnecessary_containers
     return Scaffold(
+      drawer: MyDrawer(),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           position != null
               ? buildMap()
@@ -73,7 +128,8 @@ class _MapScreenState extends State<MapScreen> {
                   child: CircularProgressIndicator(
                     color: MyColors.blue,
                   ),
-                ))
+                )),
+          buildFloatingSearchBar()
         ],
       ),
       floatingActionButton: Container(
