@@ -1,18 +1,20 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:material_floating_search_bar/material_floating_search_bar.dart';
-import 'package:omar_ahmed_maps/business_logic/phone_auth/phone_auth_cubit.dart';
+import 'package:omar_ahmed_maps/business_logic/cubit/maps_cubit/maps_cubit.dart';
+import 'package:omar_ahmed_maps/business_logic/cubit/phone_auth/phone_auth_cubit.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
-import 'package:omar_ahmed_maps/constants/strings.dart';
+import 'package:omar_ahmed_maps/data/models/place_suggestions.dart';
 import 'package:omar_ahmed_maps/helpers/location_helper.dart';
 import 'package:omar_ahmed_maps/presentation/widgets/my_drawer.dart';
+import 'package:omar_ahmed_maps/presentation/widgets/place_items.dart';
+import 'package:uuid/uuid.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({Key? key}) : super(key: key);
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -20,8 +22,8 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   AuthCubit authCubit = AuthCubit();
+  List<PlaceSuggestions> places = [];
   FloatingSearchBarController controller = FloatingSearchBarController();
-
   static Position? position;
   Completer<GoogleMapController> _mapController = Completer();
 
@@ -66,6 +68,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget buildFloatingSearchBar() {
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
+
     return FloatingSearchBar(
       controller: controller,
       elevation: 6,
@@ -85,7 +88,9 @@ class _MapScreenState extends State<MapScreen> {
       openAxisAlignment: 0.0,
       width: isPortrait ? 600 : 500,
       debounceDelay: const Duration(milliseconds: 500),
-      onQueryChanged: (query) {},
+      onQueryChanged: (query) {
+        getPlacesSuggestions(query);
+      },
       onFocusChanged: (_) {},
       transition: CircularFloatingSearchBarTransition(),
       actions: [
@@ -106,10 +111,52 @@ class _MapScreenState extends State<MapScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [],
+            children: [
+              buildSuggestionsBloc(),
+            ],
           ),
         );
       },
+    );
+  }
+
+  void getPlacesSuggestions(String query) {
+    final sessionToken = const Uuid().v4();
+    BlocProvider.of<MapsCubit>(context)
+        .emitPlacesSuggestions(query, sessionToken);
+  }
+
+  Widget buildSuggestionsBloc() {
+    return BlocBuilder<MapsCubit, MapsState>(builder: (context, state) {
+      if (state is PlacesLoaded) {
+        places = (state).places;
+
+        if (places.isNotEmpty) {
+          return buildPlacesList();
+        } else {
+          return Container();
+        }
+      } else {
+        return Container();
+      }
+    });
+  }
+
+  Widget buildPlacesList() {
+    return ListView.builder(
+      itemBuilder: (ctx, index) {
+        return InkWell(
+          onTap: () {
+            controller.close();
+          },
+          child: PlaceItem(
+            suggestions: places[index],
+          ),
+        );
+      },
+      itemCount: places.length,
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
     );
   }
 
