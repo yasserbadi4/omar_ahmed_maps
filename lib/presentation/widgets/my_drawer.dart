@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:omar_ahmed_maps/business_logic/phone_auth/phone_auth_cubit.dart';
+import 'package:omar_ahmed_maps/business_logic/cubit/phone_auth/phone_auth_cubit.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
 import 'package:omar_ahmed_maps/constants/strings.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,8 +34,14 @@ class MyDrawer extends StatelessWidget {
         const SizedBox(
           height: 5,
         ),
-        Text("01009997566",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        BlocProvider<AuthCubit>(
+          create: (context) => authCubit,
+          child: Text("${authCubit.getLoggedInUser().phoneNumber}",
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: MyColors.blue)),
+        ),
       ],
     );
   }

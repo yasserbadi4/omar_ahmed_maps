@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omar_ahmed_maps/business_logic/phone_auth/phone_auth_cubit.dart';
+import 'package:omar_ahmed_maps/business_logic/cubit/phone_auth/phone_auth_cubit.dart';
 import 'package:omar_ahmed_maps/constants/my_colors.dart';
 import 'package:omar_ahmed_maps/constants/strings.dart';
 
